@@ -1,3 +1,24 @@
+        **************** NOTICE *********************
+        Please, please, realize that this module will
+        only work with passwords that are stored in
+        /etc/passwd.  Most systems use shadow
+        passwords now, and the call that this module
+        uses to access the password ONLY checks for
+        the password in the /etc/passwd file.  Also,
+        the call that is needed to access passwords
+        in /etc/shadow cannot be called by anyone
+        other than root, so, (unless you are crazy
+        enough to run apache as root), you will not
+        be able to access /etc/shadow.
+
+        For more info on shadow passwords:
+        http://www.tldp.org/HOWTO/Shadow-Password-HOWTO.html
+
+        For alternatives that can access /etc/shadow from
+        apache:
+        http://mod-auth-shadow.sourceforge.net/
+        *********************************************
+
 NAME
      Apache::AuthenPasswd - mod_perl passwd Authentication module
 
@@ -57,10 +78,11 @@ DESCRIPTION
      least.
 
 AUTHOR
-     Demetrios E. Paneras <dep@media.mit.edu>
+     Demetrios E. Paneras <dep@media.mit.edu> and
+     Shannon Eric Peevey <speeves@unt.edu>
 
 COPYRIGHT
-     Copyright (c) 1998 Demetrios E. Paneras, MIT Media
+     Copyright (c) 1998, 2003 Demetrios E. Paneras, MIT Media
      Laboratory.
 
      This library is free software; you can redistribute it

@@ -1,40 +1,60 @@
 package Apache::AuthenPasswd;
 
 use strict;
-use Apache::Constants ':common';
+use mod_perl;
 
-$Apache::AuthenPasswd::VERSION = '0.10';
+$Apache::AuthenPasswd::VERSION = '0.11';
+
+# setting the constants to help identify which version of mod_perl
+# is installed
+use constant MP2 => ($mod_perl::VERSION >= 1.99);
+
+# test for the version of mod_perl, and use the appropriate libraries
+BEGIN {
+        if (MP2) {
+                require Apache::Const;
+                require Apache::Access;
+                require Apache::Connection;
+                require Apache::Log;
+                require Apache::RequestRec;
+                require Apache::RequestUtil;
+                Apache::Const->import(-compile => 'HTTP_UNAUTHORIZED','OK');
+        } else {
+                require Apache::Constants;
+                Apache::Constants->import('HTTP_UNAUTHORIZED','OK');
+        }
+}
 
 sub handler {
     my $r = shift;
     my($res, $sent_pwd) = $r->get_basic_auth_pw;
     return $res if $res; #decline if not Basic
 
-    my $name = $r->connection->user;
+    my $name = MP2 ? $r->user : $r->connection->user;
 
     if ($name eq "") {
 	$r->note_basic_auth_failure;
-        $r->log_reason("Apache::AuthenPasswd - no username given", $r->uri);
-        return AUTH_REQUIRED;
+        MP2 ?  $r->log_error("Apache::AuthenPasswd - no username given", $r->uri) : $r->log_reason("Apache::AuthenPasswd - no username given", $r->uri);
+        return MP2 ? Apache::HTTP_UNAUTHORIZED : Apache::Constants::HTTP_UNAUTHORIZED;
     }
 
     my ($user, $passwd, $uid, $gid, $quota, $comment, $gcos, $dir, $shell) = getpwnam $name;
 
     unless ($user) {
 	$r->note_basic_auth_failure;
-	$r->log_reason("Apache::AuthenPasswd - user $name: unknown", $r->uri);
-	return AUTH_REQUIRED;
+	MP2 ? $r->log_error("Apache::AuthenPasswd - user $name: unknown", $r->uri) : $r->log_reason("Apache::AuthenPasswd - user $name: unknown", $r->uri);
+        return MP2 ? Apache::HTTP_UNAUTHORIZED : Apache::Constants::HTTP_UNAUTHORIZED;
     }
 
     if(crypt($sent_pwd, $passwd) eq $passwd) {
-	return OK;
+	return MP2 ? Apache::OK : Apache::Constants::OK
     } else {
 	$r->note_basic_auth_failure;
-	$r->log_reason("Apache::AuthenPasswd - user $name: bad password", $r->uri);
-	return AUTH_REQUIRED;
+	MP2 ? $r->log_error("Apache::AuthenPasswd - user $name: bad password", $r->uri) : $r->log_reason("Apache::AuthenPasswd - user $name: bad password", $r->uri);
+        return MP2 ? Apache::HTTP_UNAUTHORIZED : Apache::Constants::HTTP_UNAUTHORIZED;
     }
 
-    return OK;
+	return MP2 ? Apache::OK : Apache::Constants::OK
 }
 
 1;
@@ -43,7 +63,7 @@ __END__
 
 =head1 NAME
 
-Apache::AuthenPasswd - mod_perl passwd Authentication module
+Apache::AuthenPasswd - mod_perl /etc/passwd Authentication module
 
 =head1 SYNOPSIS
 
@@ -70,6 +90,27 @@ Apache::AuthenPasswd - mod_perl passwd Authentication module
     an .htaccess file.
 
 = head1 DESCRIPTION
+
+        **************** NOTICE *********************
+        Please, please, realize that this module will
+        only work with passwords that are stored in
+        /etc/passwd.  Most systems use shadow
+        passwords now, and the call that this module
+        uses to access the password ONLY checks for
+        the password in the /etc/passwd file.  Also,
+        the call that is needed to access passwords
+        in /etc/shadow cannot be called by anyone
+        other than root, so, (unless you are crazy
+        enough to run apache as root), you will not
+        be able to access /etc/shadow.
+
+        For more info on shadow passwords:
+        http://www.tldp.org/HOWTO/Shadow-Password-HOWTO.html
+
+        For alternatives that can access /etc/shadow from
+        apache:
+        http://mod-auth-shadow.sourceforge.net/
+        *********************************************
 
 This perl module is designed to work with mod_perl. It is a direct
 adaptation (i.e. I modified the code) of Michael Parker's
@@ -98,11 +139,11 @@ that it was written hastily, to say the least.
 
 =head1 AUTHOR
 
-Demetrios E. Paneras <dep@media.mit.edu>
+Demetrios E. Paneras <dep@media.mit.edu> and Shannon Eric Peevey <speeves@unt.edu>
 
 =head1 COPYRIGHT
 
-Copyright (c) 1998 Demetrios E. Paneras, MIT Media Laboratory.
+Copyright (c) 1998, 2003 Demetrios E. Paneras, MIT Media Laboratory.
 
 This library is free software; you can redistribute it and/or
 modify it under the same terms as Perl itself.
