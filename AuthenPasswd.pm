@@ -3,7 +3,7 @@ package Apache::AuthenPasswd;
 use strict;
 use mod_perl;
 
-$Apache::AuthenPasswd::VERSION = '0.11';
+$Apache::AuthenPasswd::VERSION = '0.12';
 
 # setting the constants to help identify which version of mod_perl
 # is installed
@@ -47,14 +47,14 @@ sub handler {
     }
 
     if(crypt($sent_pwd, $passwd) eq $passwd) {
-	return MP2 ? Apache::OK : Apache::Constants::OK
+	return MP2 ? Apache::OK : Apache::Constants::OK;
     } else {
 	$r->note_basic_auth_failure;
 	MP2 ? $r->log_error("Apache::AuthenPasswd - user $name: bad password", $r->uri) : $r->log_reason("Apache::AuthenPasswd - user $name: bad password", $r->uri);
         return MP2 ? Apache::HTTP_UNAUTHORIZED : Apache::Constants::HTTP_UNAUTHORIZED;
     }
 
-	return MP2 ? Apache::OK : Apache::Constants::OK
+	return MP2 ? Apache::OK : Apache::Constants::OK;
 }
 
 1;

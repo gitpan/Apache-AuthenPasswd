@@ -10,3 +10,6 @@ Revision history for Perl extension Apache::AuthenPasswd.
 	- Added notice of security problems associated with this
 	  module in Makefile, README and .pm files
 	- Ported module to work with both modperl 1 and 2
+
+0.12  Thur Jul 03 13:33 2003
+	- replaced some missing semi-colons
